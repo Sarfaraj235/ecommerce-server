@@ -13,7 +13,7 @@ import java.util.*;
 public class Product extends BaseEntity {
 
     private String title;
-
+    @Column(length = 1000)
     private String description;
 
     private Integer price;

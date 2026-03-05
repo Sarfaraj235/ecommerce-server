@@ -8,9 +8,11 @@ import com.app.pojos.Category;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
-    Category findByName(String name);
+	Category findByName(String name);
 
-    @Query("SELECT c FROM Category c WHERE c.name = :name AND c.parentCategory = :parent")
-    Category findByNameAndParent(@Param("name") String name,
-                                 @Param("parent") Category parent);
+	@Query("SELECT c FROM Category c WHERE c.name = :name AND c.parentCategory = :parent")
+	Category findByNameAndParent(@Param("name") String name, @Param("parent") Category parent);
+
+	Category findByNameAndLevel(String name, int level);
+	Category findByNameAndParentCategoryAndLevel(String name, Category parentCategory, int level);
 }

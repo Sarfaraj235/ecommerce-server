@@ -32,32 +32,31 @@ public class ProductServiceImple implements ProductService {
     @Override
     public Product createProduct(ProductRequest request) {
 
-        Category topLevel = categoryRepo.findByName(request.getTopLevelCategory());
+        String topName = normalizeCategory(request.getTopLevelCategory());
+        String secondName = normalizeCategory(request.getSecondLevelCategory());
+        String thirdName = normalizeCategory(request.getThirdLevelCategory());
 
+        Category topLevel = categoryRepo.findByNameAndLevel(topName, 1);
         if (topLevel == null) {
             topLevel = new Category();
-            topLevel.setName(request.getTopLevelCategory());
+            topLevel.setName(topName);
             topLevel.setLevel(1);
             topLevel = categoryRepo.save(topLevel);
         }
 
-        Category secondLevel =
-                categoryRepo.findByNameAndParent(request.getSecondLevelCategory(), topLevel);
-
+        Category secondLevel = categoryRepo.findByNameAndParentCategoryAndLevel(secondName, topLevel, 2);
         if (secondLevel == null) {
             secondLevel = new Category();
-            secondLevel.setName(request.getSecondLevelCategory());
+            secondLevel.setName(secondName);
             secondLevel.setParentCategory(topLevel);
             secondLevel.setLevel(2);
             secondLevel = categoryRepo.save(secondLevel);
         }
 
-        Category thirdLevel =
-                categoryRepo.findByNameAndParent(request.getThirdLevelCategory(), secondLevel);
-
+        Category thirdLevel = categoryRepo.findByNameAndParentCategoryAndLevel(thirdName, secondLevel, 3);
         if (thirdLevel == null) {
             thirdLevel = new Category();
-            thirdLevel.setName(request.getThirdLevelCategory());
+            thirdLevel.setName(thirdName);
             thirdLevel.setParentCategory(secondLevel);
             thirdLevel.setLevel(3);
             thirdLevel = categoryRepo.save(thirdLevel);
@@ -78,6 +77,11 @@ public class ProductServiceImple implements ProductService {
         product.setCreatedAt(LocalDateTime.now());
 
         return productRepo.save(product);
+    }
+
+    private String normalizeCategory(String value) {
+        if (value == null) return "";
+        return value.trim().toLowerCase().replace("-", "_").replaceAll("\\s+", "_");
     }
 
     @Override
@@ -141,24 +145,43 @@ public class ProductServiceImple implements ProductService {
                                        String sort, String stock,
                                        int pageNo, int pageSize) {
 
-        int safePageNo = Math.max(pageNo, 0);     // if your API is 1-based, use Math.max(pageNo - 1, 0)
+        int safePageNo = Math.max(pageNo, 0);
         int safePageSize = Math.max(pageSize, 1);
         Pageable pageable = PageRequest.of(safePageNo, safePageSize);
 
-        List<Product> products = productRepo.filterProducts(category, minPrice, maxPrice, minDiscount, sort);
+        String effectiveCategory =
+                (category == null || category.isBlank() || "all".equalsIgnoreCase(category))
+                        ? null
+                        : category.trim().toLowerCase();
 
-        if (colors != null && !colors.isEmpty()) {
+        List<Product> products = productRepo.filterProducts(
+                effectiveCategory, minPrice, maxPrice, minDiscount, sort
+        );
+
+        List<String> effectiveColors = (colors == null ? List.<String>of() : colors).stream()
+                .filter(c -> c != null && !c.trim().isEmpty())
+                .map(String::trim)
+                .filter(c -> !"all".equalsIgnoreCase(c))
+                .toList();
+
+        List<String> effectiveSizes = (sizes == null ? List.<String>of() : sizes).stream()
+                .filter(s -> s != null && !s.trim().isEmpty())
+                .map(String::trim)
+                .filter(s -> !"all".equalsIgnoreCase(s))
+                .toList();
+
+        if (!effectiveColors.isEmpty()) {
             products = products.stream()
                     .filter(p -> p.getColor() != null &&
-                            colors.stream().anyMatch(c -> c.equalsIgnoreCase(p.getColor())))
+                            effectiveColors.stream().anyMatch(c -> c.equalsIgnoreCase(p.getColor())))
                     .collect(Collectors.toList());
         }
 
-        if (sizes != null && !sizes.isEmpty()) {
+        if (!effectiveSizes.isEmpty()) {
             products = products.stream()
                     .filter(p -> p.getSizes() != null && p.getSizes().stream()
                             .anyMatch(s -> s.getName() != null &&
-                                    sizes.stream().anyMatch(req -> req.equalsIgnoreCase(s.getName()))))
+                                    effectiveSizes.stream().anyMatch(req -> req.equalsIgnoreCase(s.getName()))))
                     .collect(Collectors.toList());
         }
 
@@ -182,4 +205,19 @@ public class ProductServiceImple implements ProductService {
 
         return new PageImpl<>(pageContent, pageable, products.size());
     }
+    
+    @Override
+    public Page<Product> getNewArrivalsBySegment(String segment, int pageNo, int pageSize) {
+        int safePageNo = Math.max(pageNo, 0);
+        int safePageSize = Math.max(pageSize, 1);
+        Pageable pageable = PageRequest.of(safePageNo, safePageSize);
+
+        String normalizedSegment = (segment == null || segment.isBlank())
+                ? "all"
+                : segment.trim().toLowerCase();
+
+        return productRepo.findNewArrivalsBySegment(normalizedSegment, pageable);
+    }
+
+
 }

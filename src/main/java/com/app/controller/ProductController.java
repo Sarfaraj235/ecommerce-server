@@ -21,7 +21,7 @@ public class ProductController {
 
     @GetMapping("/products")
     public ResponseEntity<Page<Product>> findProductByCategoryHandler(@RequestParam String category,
-            @RequestParam List<String>color, @RequestParam List<String> size, @RequestParam Integer minPrice, 
+    		@RequestParam(required = false) List<String> color,@RequestParam(required = false) List<String> size, @RequestParam Integer minPrice, 
             @RequestParam Integer maxPrice, @RequestParam Integer minDiscount, @RequestParam String sort, 
             @RequestParam String stock, @RequestParam Integer pageNumber, @RequestParam Integer pageSize) {
 
@@ -39,7 +39,16 @@ public class ProductController {
         return new ResponseEntity<Product>(product, HttpStatus.ACCEPTED);
     }
 
-    
+    @GetMapping("/products/new-arrivals")
+    public ResponseEntity<Page<Product>> getNewArrivals(
+            @RequestParam(defaultValue = "all") String segment,
+            @RequestParam(defaultValue = "0") Integer pageNumber,
+            @RequestParam(defaultValue = "12") Integer pageSize) {
+
+        Page<Product> res = productService.getNewArrivalsBySegment(segment, pageNumber, pageSize);
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
     
     
     
