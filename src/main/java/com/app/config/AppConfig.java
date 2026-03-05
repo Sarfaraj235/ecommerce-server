@@ -29,7 +29,10 @@ public class AppConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration cfg = new CorsConfiguration();
-                cfg.setAllowedOrigins(List.of("http://localhost:5173", "https://sarfaraj-ecommerce.vercel.app"));
+                cfg.setAllowedOriginPatterns(List.of(
+                		  "https://*.vercel.app",
+                		  "http://localhost:5173"
+                		));
                 cfg.setAllowedMethods(List.of("*"));
                 cfg.setAllowedHeaders(List.of("*"));
                 cfg.setAllowCredentials(true);
