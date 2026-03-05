@@ -29,17 +29,18 @@ public class AppConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration cfg = new CorsConfiguration();
-                cfg.setAllowedOriginPatterns(List.of(
-                		  "https://*.vercel.app",
-                		  "http://localhost:5173"
-                		));
-                cfg.setAllowedMethods(List.of("*"));
+                cfg.setAllowedOrigins(List.of(
+                    "https://sarfaraj-ecommerce.vercel.app",
+                    "http://localhost:5173"
+                ));
+                cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 cfg.setAllowedHeaders(List.of("*"));
                 cfg.setAllowCredentials(true);
                 cfg.setExposedHeaders(List.of("Authorization"));
-                cfg.setMaxAge(360L);
+                cfg.setMaxAge(3600L);
                 return cfg;
             }))
+
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
